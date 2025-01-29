@@ -1,0 +1,46 @@
+@if (IsVisible)
+{
+    <div class="modal" style="display:block;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit To-Do Item</h5>
+                    <button type="button" class="close" @onclick="Close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <input @bind="Todo.Title" class="form-control" />
+                    <textarea @bind="Todo.Description" class="form-control" rows="4" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="Close">Close</button>
+                    <button type="button" class="btn btn-primary" @onclick="Save">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* @if (showBackdrop)
+{
+    <div class="modal-backdrop fade show"></div>
+} *@
+
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public TodoItem Todo { get; set; }
+    [Parameter] public EventCallback<TodoItem> OnSave { get; set; }
+
+    private async Task Save()
+    {
+        await OnSave.InvokeAsync(Todo);
+        await Close();
+    }
+
+    private async Task Close()
+    {
+        IsVisible = false;
+        await IsVisibleChanged.InvokeAsync(IsVisible);
+    }
+}

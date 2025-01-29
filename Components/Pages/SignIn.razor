@@ -1,0 +1,92 @@
+@page "/signin"
+@inject AppDbContext DbContext
+@inject IHttpContextAccessor HttpContextAccessor
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.AspNetCore.Authentication
+@using ToDoList.Services;
+@inject NavigationManager NavManager
+@using Microsoft.EntityFrameworkCore
+@using System.Linq;
+@using System.ComponentModel.DataAnnotations;
+
+<div class="containter">
+    <div class="row justify-content-center">
+        <div class="col-2 border rounded bg-secondary">
+            <EditForm Model="@Model" OnValidSubmit="OnPostAsync" FormName="LoginForm">
+                <DataAnnotationsValidator />
+                <div class="form-group">
+                    <label for="input-username">Username</label>
+                    <InputText class="form-control" id="input-username" @bind-Value="Model.Username" placeholder="Username" />
+                </div>
+                <div class="form-group">
+                    <label for="input-password">Password</label>
+                    <InputText class="form-control" id="input-password" @bind-Value="Model.Password" placeholder="Password" type="password" />
+                </div>
+                <button class="btn btn-primary" type="submit">Sign In</button>
+            </EditForm>
+
+            <NavLink href="/create-account">Or Create an Account</NavLink>
+
+            <p>@message</p>
+
+            @foreach (var user in DbContext.Users)
+            {
+                <p>@user.Username</p>
+                <p>@user.Password</p>
+                <p>@user.Role</p>
+            }
+        </div>
+    </div>
+</div>
+@code{
+    @* [Required(AllowEmptyStrings = false, ErrorMessage = "Username Required")]
+    private string username = string.Empty;
+    [Required(AllowEmptyStrings = false, ErrorMessage = "Password Required")]
+    private string password = string.Empty; *@
+
+    [SupplyParameterFromForm]
+    private User Model {get; set;} = new();
+    private string message = "Sign in to continue";
+
+    [CascadingParameter]
+    public HttpContext? HttpContext {get; set;}
+
+    private async Task OnPostAsync()
+    {
+        var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Username == Model.Username);
+
+        if(user == null)
+        {
+            message = "Could not find user";
+        }
+        else if (user.Password != Model.Password)
+        {
+            message = "password was incorrect";
+        }
+        else
+        {
+            message = "Sign in successful";
+            @* UserState.SignIn(user.Username);
+            message = "Sign in successful";
+            NavManager.NavigateTo("/"); *@
+
+            Model.Role = user.Role;
+            Model.Id = user.Id;
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, Model.Username),
+                new Claim(ClaimTypes.Role, Model.Role),
+                new Claim(ClaimTypes.NameIdentifier, Model.Id.ToString())
+            };
+            message = "created claim";
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+            message = "about to sign in";
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+            message = "signed in";
+            NavManager.NavigateTo("/");
+        }
+    }
+}

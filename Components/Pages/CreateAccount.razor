@@ -1,0 +1,51 @@
+@page "/create-account"
+@rendermode InteractiveServer
+@using ToDoList.Data;
+@using ToDoList.Models;
+@inject AppDbContext DbContext
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-2">
+            <input class="form-control" @bind="userName" placeholder="Username" />
+            <br />
+            <input class="form-control" @bind="password" placeholder="Password" type="password" />
+            <br />
+            <button class="btn btn-primary" @onclick="HandleSubmit">Create Account</button>
+            <p>@message</p>
+
+            @foreach (var user in DbContext.Users)
+            {
+                <p>@user.Username</p>
+            }
+        </div>
+    </div>
+</div>
+
+@code{
+    private string userName = string.Empty;
+    private string password = string.Empty;
+    private string message = string.Empty;
+
+    private async Task HandleSubmit()
+    {
+        var existingUser = await DbContext.Users.FirstOrDefaultAsync(u => u.Username == userName);
+
+        if(existingUser == null){
+            var user = new User
+            {
+                Username = userName,
+                Password = password,
+                Role = "user"
+            };
+
+            DbContext.Users.Add(user);
+            await DbContext.SaveChangesAsync();
+        }
+        else
+        {
+            message = "Username aleardy exists";
+        }
+        
+    }
+}

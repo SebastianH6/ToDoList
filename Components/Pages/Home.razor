@@ -1,0 +1,139 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using ToDoList.Models
+@inject IJSRuntime js
+@inject AppDbContext DbContext
+@inject ToDoList.Services.ToDoService TodoService;
+
+@using Microsoft.AspNetCore.Components.Authorization;
+
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+@* <button class="btn btn-primary" @onclick="() => Modal.Open()">Open Dialog</button> *@
+
+
+
+@* <Modal @ref="@Modal" Title="Hello World">
+    <input @bind="newTodo" />
+    <button @onclick="AddTodo">Add Todo</button>
+</Modal> *@
+<div class="container">
+    @if(isUserAuthenticated){
+        @* <input @bind="newTodo" />
+        <button @onclick="AddTodo">Add Todo</button> *@
+        <EditForm Model="@newTodo" OnValidSubmit="AddTodo" FormName="CreateNewTodo">
+            <DataAnnotationsValidator />
+            <InputText class="form-control" @bind-Value="newTodo.Title" placeholder="Todo Title" autocomplete="off"/>
+            <br/>
+            <InputTextArea class="form-control" rows="3" @bind-Value="newTodo.Description" placeholder="Description" autocomplete="off" style="max-height:20rem;"/>
+            <br/>
+            <button class="btn btn-primary" type="submit">Add Todo</button>
+        </EditForm>
+        
+            @* <li>
+                        <EditForm Model="todo.Title" OnValidSubmit="UpdateTodo"Add FormName="ItemToDo">
+                            <input @bind-value="todo.Title" />
+                            <button type="submit">Save Changes</button>
+                        </EditForm>
+                    </li> *@
+    <ToDoList.Components.Shared.ToDoTable userId="userId" EditTodo="EditTodo"/>
+    
+    <ToDoList.Components.Shared.Modal IsVisible="isEditModalVisible" Todo="selectedTodo" OnSave="SaveTodo" IsVisibleChanged="HandleModalVisibilityChanged"/>
+    }
+    else
+    {
+        <p>Please sign in to continue</p>
+    } 
+</div>
+@code{
+    //private Modal Modal {get; set;}
+    //private List<TodoItem> todos = new List<TodoItem>();
+    //private int todoCount;
+        
+    private TodoItem newTodo = new();
+    int userId;
+    private bool isUserAuthenticated = false;
+    private bool isEditModalVisible = false;
+    private TodoItem? selectedTodo;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await AuthStateProvider.GetAuthenticationStateAsync()).User;
+
+        if(user.Identity.IsAuthenticated)
+        {
+            isUserAuthenticated = true;
+            var username = user.Identity.Name;
+
+            var userDb = await DbContext.Users.FirstOrDefaultAsync(u => u.Username == username);
+            if(userDb != null)
+            {
+                userId = userDb.Id;
+
+                //todos = await DbContext.ToDoItems.Where(t => t.UserId == userId).ToListAsync();
+            }
+        }
+    }
+
+    private async Task AddTodo()
+    {
+        @* js.InvokeVoidAsync("alert", "Hello"); *@
+
+            //var todoItem = new TodoItem { Title = newTodo, UserId = userId};
+            newTodo.UserId = userId;
+            //DbContext.ToDoItems.Add(newTodo);
+            //await DbContext.SaveChangesAsync();
+
+            //newTodo = new();
+           // Modal.Close();
+
+           await TodoService.AddTodoAsync(newTodo);
+           newTodo = new();
+
+    }
+
+    private void EditTodo(TodoItem todo)
+    {
+        selectedTodo = todo;
+        isEditModalVisible = true;
+    }
+    private async Task SaveTodo(TodoItem todo)
+    {
+        @* await UpdateTodo(todo);
+        isEditModalVisible = false; *@
+
+        await TodoService.UpdateTodoAsync(todo);
+        isEditModalVisible = false;
+    }
+
+    void HandleKeyPress(KeyboardEventArgs e)
+    {
+        if(e.Key == "Enter")
+        {
+            //AddTodo();
+        }
+    }
+
+    private async Task UpdateTodo(TodoItem todo)
+    {
+        @* DbContext.ToDoItems.Update(todo);
+        await DbContext.SaveChangesAsync(); *@
+
+        await TodoService.UpdateTodoAsync(todo);
+    }
+
+    private void HandleModalVisibilityChanged(bool isVisible)
+    {
+        isEditModalVisible = isVisible;
+        if(!isVisible)
+        {
+            selectedTodo = null;
+        }
+    }
+}
