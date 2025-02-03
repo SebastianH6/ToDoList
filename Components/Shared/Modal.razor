@@ -1,23 +1,60 @@
 @if (IsVisible)
 {
-    <div class="modal" style="display:block;">
+    <div class="modal @itemPriority" style="display:block;">
         <div class="modal-dialog">
-            <div class="modal-content">
+            <div class="modal-content @itemPriority">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit To-Do Item</h5>
-                    <button type="button" class="close" @onclick="Close">&times;</button>
+                    <h5 class="modal-title">@((Todo?.Id == 0) ? "Create Todo Item" : "Edit Todo Item")</h5>
+                    <button type="button" class="btn-close" @onclick="Close"></button>
                 </div>
+
                 <div class="modal-body">
-                    <input @bind="Todo.Title" class="form-control" />
-                    <textarea @bind="Todo.Description" class="form-control" rows="4" />
+                    <input @bind="todoEdit.Title" class="form-control mb-3" placeholder="title"/>
+                    <textarea @bind="todoEdit.Description" class="form-control mb-3" rows="4" placeholder="description..."/>
+                    <label for="date">Due Date:</label>
+                    <input class="form-control mb-3" id="date" name="date" placeholder="MM/DD/YYYY" type="date" min="@DateTime.Now" @bind="todoEdit.DueDate"/>
+                    @* <InputDate TValue="DateOnly" @bind-Value="todoEdit.DueDate" placeholder="MM/DD/YYYY"/> *@
+                    <select class="form-select" @bind="todoEdit.Priority">
+                        <option value="">Set Priority...</option>
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                        <option value="Urgent">Urgent</option>
+                    </select>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="Close">Close</button>
-                    <button type="button" class="btn btn-primary" @onclick="Save">Save changes</button>
+                    @if(Todo?.Id == 0)
+                    {
+                        <button type="button" class="btn btn-secondary" @onclick="Close">Close</button>
+                        <button type="button" class="btn btn-primary" @onclick="Save">Create</button>
+
+                        //<button type="button" class="btn btn-secondary" @onclick="Close">Close</button>
+                        //<button type="submit" class="btn btn-primary">Create</button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-secondary" @onclick="Close">Close</button>
+                        <button type="button" class="btn btn-primary" @onclick="Save">Save changes</button>
+
+                        //<button type="button" class="btn btn-secondary" @onclick="Close">Close</button>
+                        //<button type="submit" class="btn btn-primary" @onclick="Save">Save changes</button>
+                    }
+                    
                 </div>
             </div>
         </div>
     </div>
+
+    @* <EditForm Model="@newTodo" OnValidSubmit="AddTodo" FormName="CreateNewTodo">
+            <DataAnnotationsValidator />
+            <InputText class="form-control" @bind-Value="newTodo.Title" placeholder="Todo Title" autocomplete="off"/>
+            <br/>
+            <InputTextArea class="form-control" rows="3" @bind-Value="newTodo.Description" placeholder="Description" autocomplete="off" style="max-height:20rem;"/>
+            <br/>
+            <button class="btn btn-primary" type="submit">Add Todo</button>
+        </EditForm> *@
+
+    <div class="modal-backdrop" style="background-color: rgba(0,0,0,0.5);"></div>
 }
 
 @* @if (showBackdrop)
@@ -29,18 +66,68 @@
 @code {
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
-    [Parameter] public TodoItem Todo { get; set; }
+    [Parameter] public TodoItem? Todo { get; set; }
+    private TodoItem? todoEdit;
     [Parameter] public EventCallback<TodoItem> OnSave { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if(Todo != null)
+        {
+            todoEdit = new TodoItem
+            {
+                Id = Todo.Id,
+                UserId = Todo.UserId,
+                Title = Todo.Title,
+                Description = Todo.Description,
+                DueDate = Todo.DueDate,
+                CreationDate = Todo.CreationDate,
+                Priority = Todo.Priority,
+                IsDone = Todo.IsDone
+            };
+        }
+    }
+
+    public string itemPriority = "";
 
     private async Task Save()
     {
-        await OnSave.InvokeAsync(Todo);
+        if (todoEdit != null)
+        {
+            // Update the original TodoItem with the changes
+            Todo.Title = todoEdit.Title;
+            Todo.Description = todoEdit.Description;
+            Todo.DueDate = todoEdit.DueDate;
+            Todo.Priority = todoEdit.Priority;
+            Todo.IsDone = todoEdit.IsDone;
+
+            await OnSave.InvokeAsync(Todo);
+        }
         await Close();
+    }
+
+    private async Task CreateNew()
+    {
+        return;
     }
 
     private async Task Close()
     {
         IsVisible = false;
         await IsVisibleChanged.InvokeAsync(IsVisible);
+    }
+
+    private void OnPriorityChange(ChangeEventArgs e)
+    {
+        var priority = e.Value.ToString();
+
+        itemPriority = priority switch
+        {
+            "Low" => "bs-success-border",
+            "Medium" => "bs-warning-border",
+            "High" => "bs-danger-border",
+            "Urgent" => "bs-urgent-border",
+            _ => "bs-success-border"
+        };
     }
 }

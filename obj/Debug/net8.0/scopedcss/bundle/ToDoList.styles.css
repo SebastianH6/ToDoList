@@ -95,6 +95,10 @@ main[b-5enq9oyd9l] {
         right: 0.75rem;
         top: 0.5rem;
     }
+/* _content/ToDoList/Components/Layout/Navbar.razor.rz.scp.css */
+.round-button[b-ez3ecshi2y]{
+    color: orange;
+}
 /* _content/ToDoList/Components/Layout/NavMenu.razor.rz.scp.css */
 .navbar-toggler[b-x1d1l3omi2] {
     appearance: none;

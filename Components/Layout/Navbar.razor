@@ -1,0 +1,35 @@
+@rendermode InteractiveServer
+@using ToDoList.Services;
+@using Microsoft.AspNetCore.Components.Authorization;
+@inject NavigationManager nav;
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light p-3">
+  <a class="navbar-brand" href="#">Todo!</a>
+  @* <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button> *@
+  <div class="collapse navbar-collapse" id="navbarNav">
+    <ul class="navbar-nav ms-auto">
+      <AuthorizeView>
+        <NotAuthorized>
+            <NavLink href="/signin">Sign In</NavLink>
+        </NotAuthorized>
+        <Authorized>
+            <li class="nav-item">
+                <NavLink class="nav-link" href="/account">@((context?.User?.Identity?.Name) ?? "Account Info")</NavLink>
+            </li>
+            <li class="nav-item"        
+                <button class="btn btn-primary rounded-pill" @onclick="OnButtonLogout">Log Out</button>
+            </li>
+        </Authorized>
+    </AuthorizeView>
+    </ul>
+  </div>
+</nav>
+
+@code{
+  private void OnButtonLogout()
+  {
+    nav.NavigateTo("/logout");
+  }
+}

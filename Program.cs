@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using ToDoList.Components;
 using ToDoList.Data;
-using ToDoList.Services;
-
 
 var builder = WebApplication.CreateBuilder(args);
 

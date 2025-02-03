@@ -26,7 +26,16 @@ public class ToDoService
 
     public async Task UpdateTodoAsync(TodoItem todo)
     {
-        _dbContext.ToDoItems.Update(todo);
+        var existingTodo = await _dbContext.ToDoItems.FindAsync(todo.Id);
+        if(existingTodo == null)
+        {
+            _dbContext.ToDoItems.Add(todo);
+        }
+        else
+        {
+            _dbContext.ToDoItems.Update(todo);
+        }
+        
         await _dbContext.SaveChangesAsync();
     }
 

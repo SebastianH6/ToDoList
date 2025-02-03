@@ -12,32 +12,48 @@
 
 <div class="containter">
     <div class="row justify-content-center">
-        <div class="col-2 border rounded bg-secondary">
+        <div class="col-2 border rounded bg-light p-3">
             <EditForm Model="@Model" OnValidSubmit="OnPostAsync" FormName="LoginForm">
                 <DataAnnotationsValidator />
-                <div class="form-group">
+                <div class="form-group mb-3">
                     <label for="input-username">Username</label>
                     <InputText class="form-control" id="input-username" @bind-Value="Model.Username" placeholder="Username" />
                 </div>
-                <div class="form-group">
+                <div class="form-group mb-3">
                     <label for="input-password">Password</label>
                     <InputText class="form-control" id="input-password" @bind-Value="Model.Password" placeholder="Password" type="password" />
                 </div>
-                <button class="btn btn-primary" type="submit">Sign In</button>
+                <button class="btn btn-primary mb-3" type="submit">Sign In</button>
             </EditForm>
 
             <NavLink href="/create-account">Or Create an Account</NavLink>
-
-            <p>@message</p>
-
-            @foreach (var user in DbContext.Users)
-            {
-                <p>@user.Username</p>
-                <p>@user.Password</p>
-                <p>@user.Role</p>
-            }
         </div>
     </div>
+    <div class="row justify-content-center">
+        <div class="col-2">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Username</th>
+                        <th scope="col">Password</th>
+                        <th scope="col">Role</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach(var user in DbContext.Users)
+                    {
+                        <tr>
+                            <td>@user.Username</td>
+                            <td>@user.Password</td>
+                            <td>@user.Role</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        
+    </div>
+    
 </div>
 @code{
     @* [Required(AllowEmptyStrings = false, ErrorMessage = "Username Required")]
