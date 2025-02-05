@@ -10,7 +10,7 @@ namespace ToDoList.Models{
         public string? Description { get; set; }
         public DateOnly DueDate {get; set;}
         public DateOnly CreationDate {get; set;}
-        public string? Priority {get; set;}
+        public int Priority {get; set;}
         public bool IsDone { get; set; }
     }
 }

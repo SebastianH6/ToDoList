@@ -1,18 +1,24 @@
 @page "/signin"
+
 @inject AppDbContext DbContext
 @inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager NavManager
+@inject AuthenticationStateProvider AuthStateProvider
+
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Authentication.Cookies
 @using Microsoft.AspNetCore.Authentication
 @using ToDoList.Services;
-@inject NavigationManager NavManager
 @using Microsoft.EntityFrameworkCore
 @using System.Linq;
 @using System.ComponentModel.DataAnnotations;
 
+<PageTitle>Sign In</PageTitle>
+
 <div class="containter">
     <div class="row justify-content-center">
         <div class="col-2 border rounded bg-light p-3">
+            <p>@message</p>
             <EditForm Model="@Model" OnValidSubmit="OnPostAsync" FormName="LoginForm">
                 <DataAnnotationsValidator />
                 <div class="form-group mb-3">
@@ -25,7 +31,6 @@
                 </div>
                 <button class="btn btn-primary mb-3" type="submit">Sign In</button>
             </EditForm>
-
             <NavLink href="/create-account">Or Create an Account</NavLink>
         </div>
     </div>
@@ -56,17 +61,25 @@
     
 </div>
 @code{
-    @* [Required(AllowEmptyStrings = false, ErrorMessage = "Username Required")]
-    private string username = string.Empty;
-    [Required(AllowEmptyStrings = false, ErrorMessage = "Password Required")]
-    private string password = string.Empty; *@
-
     [SupplyParameterFromForm]
-    private User Model {get; set;} = new();
+    private User Model {get; set;} = new User{
+        Username = "",
+        Role = ""
+    };
     private string message = "Sign in to continue";
 
     [CascadingParameter]
     public HttpContext? HttpContext {get; set;}
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+
+        if(authState.User.Identity.IsAuthenticated)
+        {
+            NavManager.NavigateTo("/");
+        }
+    }
 
     private async Task OnPostAsync()
     {
@@ -92,15 +105,18 @@
 
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, Model.Username),
-                new Claim(ClaimTypes.Role, Model.Role),
+                new Claim(ClaimTypes.Name, Model.Username ?? string.Empty),
+                new Claim(ClaimTypes.Role, Model.Role ?? "user"),
                 new Claim(ClaimTypes.NameIdentifier, Model.Id.ToString())
             };
             message = "created claim";
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
             message = "about to sign in";
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+            if(HttpContext != null)
+            {
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+            }
             message = "signed in";
             NavManager.NavigateTo("/");
         }

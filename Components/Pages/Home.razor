@@ -1,70 +1,44 @@
 ﻿@page "/"
 @rendermode InteractiveServer
-@using ToDoList.Models
-@inject IJSRuntime js
+
 @inject AppDbContext DbContext
 @inject ToDoList.Services.ToDoService TodoService;
+@inject AuthenticationStateProvider AuthStateProvider
 
+@using ToDoList.Models
 @using Microsoft.AspNetCore.Components.Authorization;
 @using Microsoft.AspNetCore.Authorization;
 
-@inject AuthenticationStateProvider AuthStateProvider
-
 @attribute [Authorize]
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Todo!</PageTitle>
 
-@* <button class="btn btn-primary" @onclick="() => Modal.Open()">Open Dialog</button> *@
+@if(isUserAuthenticated)
+{
+    //list of users todo items
+    <ToDoList.Components.Shared.ToDoTable @ref="todoTableRef" userId="userId" EditTodo="EditTodo"/>
 
+    //modal for creating and editing todos
+    <ToDoList.Components.Shared.Modal IsVisible="isEditModalVisible" Todo="selectedTodo" OnSave="SaveTodo" OnClose="HandleModalVisibilityChanged"/>
+}
+else
+{
+    <p>Please <NavLink href="/signin">sign in</NavLink> or <NavLink href="/create-account">create an account</NavLink> to continue.</p>
+} 
 
-
-
-@* <Modal @ref="@Modal" Title="Hello World">
-    <input @bind="newTodo" />
-    <button @onclick="AddTodo">Add Todo</button>
-</Modal> *@
-    @if(isUserAuthenticated){
-        @* <input @bind="newTodo" />
-        <button @onclick="AddTodo">Add Todo</button> *@
-        @* <EditForm Model="@newTodo" OnValidSubmit="AddTodo" FormName="CreateNewTodo">
-            <DataAnnotationsValidator />
-            <InputText class="form-control" @bind-Value="newTodo.Title" placeholder="Todo Title" autocomplete="off"/>
-            <br/>
-            <InputTextArea class="form-control" rows="3" @bind-Value="newTodo.Description" placeholder="Description" autocomplete="off" style="max-height:20rem;"/>
-            <br/>
-            <button class="btn btn-primary" type="submit">Add Todo</button>
-        </EditForm> *@
-        
-            @* <li>
-                        <EditForm Model="todo.Title" OnValidSubmit="UpdateTodo"Add FormName="ItemToDo">
-                            <input @bind-value="todo.Title" />
-                            <button type="submit">Save Changes</button>
-                        </EditForm>
-                    </li> *@
-    <ToDoList.Components.Shared.ToDoTable userId="userId" EditTodo="EditTodo"/>
-    
-    <ToDoList.Components.Shared.Modal IsVisible="isEditModalVisible" Todo="selectedTodo" OnSave="SaveTodo" IsVisibleChanged="HandleModalVisibilityChanged"/>
-    }
-    else
-    {
-        <p>Please sign in to continue</p>
-    } 
 @code{
-    //private Modal Modal {get; set;}
-    //private List<TodoItem> todos = new List<TodoItem>();
-    //private int todoCount;
-        
-    //private TodoItem newTodo = new();
     int userId;
     private bool isUserAuthenticated = false;
     private bool isEditModalVisible = false;
     private TodoItem? selectedTodo;
 
+    private ToDoList.Components.Shared.ToDoTable todoTableRef;
+
     protected override async Task OnInitializedAsync()
     {
         var user = (await AuthStateProvider.GetAuthenticationStateAsync()).User;
 
-        if(user.Identity.IsAuthenticated)
+        if(user.Identity != null && user.Identity.IsAuthenticated)
         {
             isUserAuthenticated = true;
             var username = user.Identity.Name;
@@ -73,22 +47,8 @@
             if(userDb != null)
             {
                 userId = userDb.Id;
-
-                //todos = await DbContext.ToDoItems.Where(t => t.UserId == userId).ToListAsync();
             }
         }
-    }
-
-    private async Task AddTodo()
-    {
-        @* js.InvokeVoidAsync("alert", "Hello"); *@
-
-     //newTodo = new();
-           // Modal.Close();
-
-           //await TodoService.AddTodoAsync(newTodo);
-           //newTodo = new();
-
     }
 
     private void EditTodo(TodoItem? todo = null)
@@ -105,10 +65,9 @@
         }
         isEditModalVisible = true;
     }
+
     private async Task SaveTodo(TodoItem todo)
     {
-        @* await UpdateTodo(todo);
-        isEditModalVisible = false; *@
         if(todo.Id == 0)
         {
             todo.UserId = userId;
@@ -116,21 +75,11 @@
 
         await TodoService.UpdateTodoAsync(todo);
         isEditModalVisible = false;
-    }
-
-    void HandleKeyPress(KeyboardEventArgs e)
-    {
-        if(e.Key == "Enter")
-        {
-            //AddTodo();
-        }
+        await todoTableRef.GetTodos();
     }
 
     private async Task UpdateTodo(TodoItem todo)
     {
-        @* DbContext.ToDoItems.Update(todo);
-        await DbContext.SaveChangesAsync(); *@
-
         await TodoService.UpdateTodoAsync(todo);
     }
 
